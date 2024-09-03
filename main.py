@@ -1,9 +1,9 @@
 import telebot
-from db_interaction.db_interaction import DBInteraction as DBI
+from db_interaction.bot import Bot
+from db_interaction.car import Car
 
 
-DBI = DBI
-bot = telebot.TeleBot(DBI.get_token())
+bot = Bot(Bot.get_token())
 
 
 @bot.message_handler(commands=['start'])
@@ -14,7 +14,7 @@ def start(message):
     username = message.from_user.username
     user_id = message.from_user.id
 
-    answer = DBI.registration(
+    answer = bot.registration(
         first_name=first_name,
         last_name=last_name,
         username=username,
@@ -22,6 +22,15 @@ def start(message):
     )
 
     bot.send_message(message.chat.id, answer)
+
+@bot.message_handler(commands=['help'])
+def assist(message):
+    bot.send_message(message.chat.id, bot.MESSAGE_HELP)
+
+@bot.message_handler(commands=['addcar'])
+def add_car(message):
+    bot.send_message(message.chat.id, bot.MESSAGE_ADDCAR,
+                     reply_markup=bot.create_reply_markup(Car.get_car_brand(), 3))
 
 
 bot.polling(none_stop=True)
