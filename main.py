@@ -12,7 +12,7 @@ def start(message):
     username = message.from_user.username
     user_id = message.from_user.id
 
-    answer = bot.registration(
+    answer = bot.registration_user(
         first_name=first_name,
         last_name=last_name,
         username=username,
@@ -31,22 +31,9 @@ def assist(message):
 def add_car(message):
     user_id = message.from_user.id
 
-    bot.send_message(
-        message.chat.id,
-        bot.MESSAGE_ADD_BRAND,
-        reply_markup=bot.create_reply_markup(car.get_car_brand(user_id=user_id))
-    )
+    bot.send_message(message.chat.id, bot.MESSAGE_ADD_CAR)
 
-    bot.register_next_step_handler(
-        message,
-        lambda next_step: car.set_car_brand(user_id=user_id, brand=next_step.text)
-    )
-
-    bot.send_message(
-        message.chat.id,
-        bot.MESSAGE_ADD_MODEL,
-        reply_markup=bot.create_reply_markup(car.get_car_model(user_id=user_id))
-    )
+    bot.register_next_step_handler(message, lambda new_message: car.set_user_car(new_message))
 
 
 bot.polling(none_stop=True)
