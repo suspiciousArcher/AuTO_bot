@@ -3,7 +3,6 @@ from telebot import TeleBot, types
 
 
 class Bot(TeleBot):
-
     """
     В дальнейшем перенести все фразы бота в базу и тянуть через метод
     """
@@ -12,9 +11,10 @@ class Bot(TeleBot):
     \n/updatecar - обновить информацию о уже внесенном автомобиле\
     \n/deletecar - удалить автомобиль и информацию о нем
     '''
-    MESSAGE_ADDCAR = '''
-    Укажите марку автомобиля
-    '''
+    MESSAGE_ADD_BRAND = 'Укажите марку автомобиля'
+    MESSAGE_ADD_MODEL = 'Укажите модель автомобиля'
+    MESSAGE_ADD_BODY = 'Укажите тип кузова автомобиля'
+    MESSAGE_ADD_GENERATION = 'Укажите поколение автомобиля'
 
     @staticmethod
     @DBI.connection
@@ -25,7 +25,7 @@ class Bot(TeleBot):
 
     @staticmethod
     @DBI.connection
-    def registration(cursor, first_name: str, last_name: str, username:str, user_id: int) -> str:
+    def registration(cursor, first_name: str, last_name: str, username: str, user_id: int) -> str:
         try:
             cursor.execute(f"SELECT `user_id` FROM `users` WHERE user_id = {user_id}")
             result = cursor.fetchone()
@@ -45,15 +45,19 @@ class Bot(TeleBot):
             return answer
 
     @staticmethod
-    def create_reply_markup(options_ist: list, items_in_row: int = 3):
+    def create_reply_markup(options_ist: dict, items_in_row: int = 3):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        options_ist = [value for value in options_ist.values()]
 
         rows = [options_ist[i:i + items_in_row] if (i + items_in_row) < len(options_ist)
                 else options_ist[i:len(options_ist)]
                 for i in range(0, len(options_ist), items_in_row)]
 
         for row in rows:
-            buttons = [types.KeyboardButton(text) for text in row]
+            buttons = [types.KeyboardButton(text=text) for text in row]
             markup.add(*buttons)
 
         return markup
+
+    def close_reply_markup(self, message, text):
+        self.send_message(message.chat.id, text, reply_markup=types.ReplyKeyboardRemove())

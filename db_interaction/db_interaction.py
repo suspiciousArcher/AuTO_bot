@@ -9,7 +9,7 @@ class DBInteraction:
             connect = sqlite3.connect('./data/auto_db.db')
             cursor = connect.cursor()
 
-            result = func(cursor, *args, **kwargs)
+            result = func(cursor=cursor, *args, **kwargs)
             connect.commit()
             cursor.close()
             connect.close()
