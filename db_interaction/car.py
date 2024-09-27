@@ -10,20 +10,6 @@ class Car:
     body_id = None
     generation_id = None
 
-    def set_user_car(self, message: dict) -> None:
-        message_text = message.text
-        user_id = message.from_user.id
-
-        car = [value.strip() for value in message_text.split(',')]
-        car_brand = car[0]
-        car_model = car[1]
-        car_body = car[2]
-        car_generation = car[3]
-
-        self.set_car_brand(user_id=user_id, brand=car_brand)
-        self.set_car_model(user_id=user_id, model=car_model)
-
-
     @staticmethod
     @DBI.connection
     def get_car_brand(*, cursor, user_id: int) -> dict:
@@ -64,6 +50,21 @@ class Car:
 
     """__________________________________________SET методы__________________________________________________"""
 
+    def set_user_car(self, message: dict) -> None:
+        message_text = message.text
+        user_id = message.from_user.id
+
+        car = [value.strip() for value in message_text.split(',')]
+        car_brand = car[0]
+        car_model = car[1]
+        car_body = car[2]
+        car_generation = car[3]
+
+        self.set_car_brand(user_id=user_id, brand=car_brand)
+        self.set_car_model(user_id=user_id, model=car_model)
+        self.set_car_body(user_id=user_id, body=car_body)
+        self.set_car_generation(user_id=user_id, generation=car_generation)
+
     @DBI.connection
     def set_car_brand(self, *, cursor, user_id: int, brand: str) -> None:
         brand_list = self.get_car_brand(user_id=user_id)
@@ -71,8 +72,8 @@ class Car:
 
         if brand in brand_list.values():
             self.brand_id = next(int(key) for key, value in brand_list.items() if value == brand)
-            print(f'{self.brand_id=}')
-            print(type(self.brand_id))
+            # print(f'{self.brand_id=}')
+            # print(type(self.brand_id))
         else:
             cursor.execute(
                 f"INSERT INTO car_brand (brand, user_id) VALUES ('{brand}', '{user_id}')"
@@ -80,16 +81,42 @@ class Car:
 
     @DBI.connection
     def set_car_model(self, *, cursor, user_id: int, model: str) -> None:
-        model_list = self.get_car_brand(user_id=user_id)
+        model_list = self.get_car_model(user_id=user_id)
         # print(model_list)
 
         if model in model_list.values():
             self.model_id = next(int(key) for key, value in model_list.items() if value == model)
-            print(f'{self.model_id=}')
-            print(type(self.model_id))
+            # print(f'{self.model_id=}')
+            # print(type(self.model_id))
         else:
             cursor.execute(
-                f"INSERT INTO car_model(model, user_id) VALUES ('{model}', '{user_id}')"
+                f"INSERT INTO car_model (model, user_id) VALUES ('{model}', '{user_id}')"
             )
 
+    @DBI.connection
+    def set_car_body(self, *, cursor, user_id: int, body: str) -> None:
+        body_list = self.get_car_body(user_id=user_id)
+        # print(body_list)
 
+        if body in body_list.values():
+            self.body_id = next(int(key) for key, value in body_list.items() if value == body)
+            # print(f'{self.body_id=}')
+            # print(type(self.body_id))
+        else:
+            cursor.execute(
+                f"INSERT INTO car_body (body, user_id) VALUES ('{body}', '{user_id}')"
+            )
+
+    @DBI.connection
+    def set_car_generation(self, *, cursor, user_id: int, generation: str) -> None:
+        generation_list = self.get_car_generation(user_id=user_id)
+        # print(generation_list)
+
+        if generation in generation_list.values():
+            self.generation_id = next(int(key) for key, value in generation_list.items() if value == generation)
+            # print(f'{self.generation_id=}')
+            # print(type(self.generation_id))
+        else:
+            cursor.execute(
+                f"INSERT INTO car_generation (generation, user_id) VALUES ('{generation}', '{user_id}')"
+            )
