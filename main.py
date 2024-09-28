@@ -33,7 +33,7 @@ def add_car(message):
 
     bot.send_message(message.chat.id, bot.MESSAGE_ADD_CAR)
 
-    bot.register_next_step_handler(message, lambda new_message: car.set_user_car(new_message))
+    bot.register_next_step_handler(message, lambda new_message: car.set_user_car(message=new_message))
 
 
 bot.polling(none_stop=True)
