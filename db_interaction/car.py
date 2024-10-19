@@ -1,6 +1,5 @@
-from typing import Dict, Any
-
 from db_interaction.db_interaction import DBInteraction as DBI
+from db_interaction.bot import Bot
 
 
 class Car:
@@ -10,61 +9,47 @@ class Car:
     body_id = None
     generation_id = None
 
-    brand_model_id = None
-    brand_model_model_range_id = None
-    brand_model_body_id = None
-    brand_model_body_generation_id = None
+    @staticmethod
+    def get_sql_to_receive(*, name_properties: str, user_id: int) -> str:
+        sql_dict = {
+            'brand': f"SELECT id, brand FROM car_brand WHERE user_id = {user_id} OR user_id IS NULL",
+            'model': f"SELECT id, model FROM car_model WHERE user_id = {user_id} OR user_id IS NULL",
+            'model_range': f"SELECT id, model_range FROM car_model_range WHERE user_id = {user_id} OR user_id IS NULL",
+            'body': f"SELECT id, body FROM car_body WHERE user_id = {user_id} OR user_id IS NULL",
+            'generation': f"SELECT id, generation FROM car_generation WHERE user_id = {user_id} OR user_id IS NULL",
+            'user_car': f"""SELECT id, user_id, brand_id, model_id, model_range_id, body_id, generation_id 
+                            FROM user_car WHERE user_id = {user_id} """
+        }
+
+        return sql_dict[name_properties]
+
+    @staticmethod
+    def get_sql_to_write(*, name_table: str, name_columns: str, properties: str) -> str:
+        sql = f"""
+                    INSERT INTO '{name_table}' ('{name_columns}')
+                    VALUES ('{properties}')
+        """
+
+        return sql
+
+
 
     #  Переписать все get и set методы в два. 1 - set, 1 - get с доп параметрами "имя таблицы"-"поля"-"значения".
     #  set_user_car - оставить.
 
-    @staticmethod
     @DBI.connection
-    def get_car_brand(*, cursor, user_id: int) -> dict:
-        car_list = cursor.execute(
-            f"SELECT id, brand FROM car_brand WHERE user_id = {user_id} OR user_id IS NULL"
-        )
-        car_list = dict(car_list)
-        # car_list = [item[0] for item in car_list]
-        return car_list
+    def get_car_info(self, *, cursor, user_id: int, name_properties: str) -> dict:
+        cursor.execute(self.get_sql_to_receive(name_properties=name_properties, user_id=user_id))
+        list_info = cursor.fetchall()
+        list_info = dict(list_info)
+        return list_info
 
-    @staticmethod
     @DBI.connection
-    def get_car_model(*, cursor, user_id: int) -> dict:
-        model_list = cursor.execute(
-            f"SELECT id, model FROM car_model WHERE user_id = {user_id} OR user_id IS NULL"
-        )
-        model_list = dict(model_list)
-        # model_list = [item[0] for item in model_list]
-        return model_list
-
-    @staticmethod
-    @DBI.connection
-    def get_car_model_range(*, cursor, user_id: int) -> dict:
-        model_range_list = cursor.execute(
-            f"SELECT id, model_range FROM car_model_range WHERE user_id = {user_id} OR user_id IS NULL"
-        )
-        model_range_list = dict(model_range_list)
-        # model_range_list = [item[0] for item in model_range_list]
-        return model_range_list
-
-    @staticmethod
-    @DBI.connection
-    def get_car_body(*, cursor, user_id: int) -> dict:
-        body_list = cursor.execute(
-            f"SELECT id, body FROM car_body WHERE user_id = {user_id} OR user_id IS NULL"
-        )
-        body_list = dict(body_list)
-        return body_list
-
-    @staticmethod
-    @DBI.connection
-    def get_car_generation(*, cursor, user_id: int) -> dict:
-        generation_list = cursor.execute(
-            f"SELECT id, generation FROM car_generation WHERE user_id = {user_id} OR user_id IS NULL"
-        )
-        generation_list = dict(generation_list)
-        return generation_list
+    def get_user_car_info(self, *, cursor, user_id: int, name_properties: str) -> tuple:
+        cursor.execute(self.get_sql_to_receive(name_properties=name_properties, user_id=user_id))
+        list_info = cursor.fetchone()
+        # list_info = dict(list_info)
+        return list_info
 
     """__________________________________________SET методы__________________________________________________"""
 
@@ -80,98 +65,56 @@ class Car:
         car_body = car[3]
         car_generation = car[4]
 
-        self.set_car_brand(user_id=user_id, brand=car_brand)
-        self.set_car_model(user_id=user_id, model=car_model)
-        self.set_car_model_range(user_id=user_id, model_range=car_model_range)
-        self.set_car_body(user_id=user_id, body=car_body)
-        self.set_car_generation(user_id=user_id, generation=car_generation)
+        self.set_car_info(user_id=user_id, name_properties='brand', properties=car_brand)
+        self.set_car_info(user_id=user_id, name_properties='model', properties=car_model)
+        self.set_car_info(user_id=user_id, name_properties='model_range', properties=car_model_range)
+        self.set_car_info(user_id=user_id, name_properties='body', properties=car_body)
+        self.set_car_info(user_id=user_id, name_properties='generation', properties=car_generation)
 
-        self.set_car_brand_model()
+        self.set_user_car_info(message= message, user_id=user_id)
 
     @DBI.connection
-    def set_car_brand(self, *, cursor, user_id: int, brand: str) -> None:
-        brand_list = self.get_car_brand(user_id=user_id)
-        # print(brand_list)
+    def set_car_info(self, *, cursor, user_id: int, name_properties: str, properties: str) -> None:
+        list_info = self.get_car_info(name_properties=name_properties, user_id=user_id)
+        name_atr = f'{name_properties}_id'
 
-        if brand in brand_list.values():  # Логику проверки вынести в отдельный метод
-            self.brand_id = next(int(key) for key, value in brand_list.items() if value == brand)
+        if properties in list_info.values():  # Логику проверки вынести в отдельный метод
+            setattr(self, name_atr, next(int(key) for key, value in list_info.items() if value == properties))
             # print(f'{self.brand_id=}')
             # print(type(self.brand_id))
         else:
+            print('в если set_car_info')
+            print(f'{name_properties=}')
             cursor.execute(
-                f"INSERT INTO car_brand (brand) VALUES ('{brand}')"
+                self.get_sql_to_write(
+                    name_table=f'car_{name_properties}',
+                    name_columns=name_properties,
+                    properties=properties
+                )
             )
+            row_id = cursor.lastrowid
+            setattr(self, name_atr, row_id)
 
     @DBI.connection
-    def set_car_model(self, *, cursor, user_id: int, model: str) -> None:
-        model_list = self.get_car_model(user_id=user_id)
-        # print(model_list)
-
-        if model in model_list.values():
-            self.model_id = next(int(key) for key, value in model_list.items() if value == model)
-            # print(f'{self.model_id=}')
-            # print(type(self.model_id))
-        else:
-            cursor.execute(
-                f"INSERT INTO car_model (model) VALUES ('{model}')"
-            )
-
-    @DBI.connection
-    def set_car_model_range(self, *, cursor, user_id: int, model_range: str) -> None:
-        model_range_list = self.get_car_model_range(user_id=user_id)
-        # print(model_range_list)
-
-        if model_range in model_range_list.values():
-            self.model_range_id = next(int(key) for key, value in model_range_list.items() if value == model_range)
-            # print(f'{self.model_id=}')
-            # print(type(self.model_id))
-        else:
-            cursor.execute(
-                f"INSERT INTO car_model_range (model_range) VALUES ('{model_range}')"
-            )
-
-    @DBI.connection
-    def set_car_body(self, *, cursor, user_id: int, body: str) -> None:
-        body_list = self.get_car_body(user_id=user_id)
-        # print(body_list)
-
-        if body in body_list.values():
-            self.body_id = next(int(key) for key, value in body_list.items() if value == body)
-            # print(f'{self.body_id=}')
-            # print(type(self.body_id))
-        else:
-            cursor.execute(
-                f"INSERT INTO car_body (body) VALUES ('{body}')"
-            )
-
-    @DBI.connection
-    def set_car_generation(self, *, cursor, user_id: int, generation: str) -> None:
-        generation_list = self.get_car_generation(user_id=user_id)
-        # print(generation_list)
-
-        if generation in generation_list.values():
-            self.generation_id = next(int(key) for key, value in generation_list.items() if value == generation)
-            # print(f'{self.generation_id=}')
-            # print(type(self.generation_id))
-        else:
-            cursor.execute(
-                f"INSERT INTO car_generation (generation) VALUES ('{generation}')"
-            )
-
-    @DBI.connection
-    def set_car_brand_model(self, *, cursor) -> None:  # получение связей между таблицами реализовать более логично
-        brand_model_list = cursor.execute(
-            f"SELECT id FROM car_brand_model WHERE brand_id = {self.brand_id} AND model_id = {self.model_id}"
+    def set_user_car_info(self, *, cursor, message: list, user_id: int) -> None:
+        list_info = self.get_user_car_info(name_properties='user_car', user_id=user_id)
+        car_obj_dict = (
+            user_id,
+            self.brand_id,
+            self.model_id,
+            self.model_range_id,
+            self.body_id,
+            self.generation_id
         )
+        if list_info[1:] == car_obj_dict:
+            print("Зарегано")
+            # Bot.send_message(Bot, message.chat.id, 'Авто уже зарегестрировано!')  # Доделать
 
-        if bool(tuple(brand_model_list)):
-            self.brand_model_id = tuple(brand_model_list)[0][0]
-        else:
-            brand_model_list = cursor.execute(
-                f"""
-                        INSERT INTO car_brand_model (brand_id, model_id)
-                        VALUES ({self.brand_id}, {self.model_id})
-                    """
+        cursor.execute(
+            self.get_sql_to_write(
+                name_table='user_car',
+                name_columns='user_id, brand_id, model_id, model_range_id, body_id, generation_id',
+                properties=f'{user_id}, {self.brand_id}, {self.model_id}, \
+                            {self.model_range_id}, {self.body_id}, {self.generation_id}'
             )
-            self.brand_model_id = cursor.lastrowid
-            # print(self.brand_model_id)
+        )
