@@ -54,7 +54,7 @@ class Car:
     """__________________________________________SET методы__________________________________________________"""
 
     @DBI.connection
-    def set_user_car(self, *, cursor, message: dict) -> None:
+    def set_user_car(self, *, cursor, message: dict, bot: object) -> str:
         message_text = message.text
         user_id = message.from_user.id
 
@@ -71,7 +71,9 @@ class Car:
         self.set_car_info(user_id=user_id, name_properties='body', properties=car_body)
         self.set_car_info(user_id=user_id, name_properties='generation', properties=car_generation)
 
-        self.set_user_car_info(message= message, user_id=user_id)
+        answer = self.set_user_car_info(user_id=user_id)
+
+        bot.send_message(message.chat.id, answer)
 
     @DBI.connection
     def set_car_info(self, *, cursor, user_id: int, name_properties: str, properties: str) -> None:
@@ -96,7 +98,9 @@ class Car:
             setattr(self, name_atr, row_id)
 
     @DBI.connection
-    def set_user_car_info(self, *, cursor, message: list, user_id: int) -> None:
+    def set_user_car_info(self, *, cursor, user_id: int) -> str:
+        answer = None
+
         list_info = self.get_user_car_info(name_properties='user_car', user_id=user_id)
         car_obj_dict = (
             user_id,
@@ -106,15 +110,19 @@ class Car:
             self.body_id,
             self.generation_id
         )
-        if list_info[1:] == car_obj_dict:
-            print("Зарегано")
-            # Bot.send_message(Bot, message.chat.id, 'Авто уже зарегестрировано!')  # Доделать
 
-        cursor.execute(
-            self.get_sql_to_write(
-                name_table='user_car',
-                name_columns='user_id, brand_id, model_id, model_range_id, body_id, generation_id',
-                properties=f'{user_id}, {self.brand_id}, {self.model_id}, \
-                            {self.model_range_id}, {self.body_id}, {self.generation_id}'
+        if list_info[1:] == car_obj_dict:
+            # print("Зарегано")
+            answer = 'Авто уже зарегестрировано!'
+        else:
+            cursor.execute(
+                self.get_sql_to_write(
+                    name_table='user_car',
+                    name_columns='user_id, brand_id, model_id, model_range_id, body_id, generation_id',
+                    properties=f'{user_id}, {self.brand_id}, {self.model_id}, \
+                                {self.model_range_id}, {self.body_id}, {self.generation_id}'
+                )
             )
-        )
+            answer = 'Авто зарегестрировано!'
+
+        return answer
