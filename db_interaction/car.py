@@ -23,12 +23,28 @@ class Car:
 
         return sql_dict[name_properties]
 
+    # @staticmethod
+    # def get_sql_to_write(*, name_table: str, name_columns: str, properties: str) -> str:
+    #     sql = f"""
+    #                 INSERT INTO '{name_table}' ('{name_columns}')
+    #                 VALUES ('{properties}')
+    #     """
+    #
+    #     return sql
+
     @staticmethod
-    def get_sql_to_write(*, name_table: str, name_columns: str, properties: str) -> str:
+    def get_sql_to_write(*, name_table: str, data: dict) -> str:
+        columns_list = [f'"{key}"' for key in data.keys()]
+        properties_list = [f'"{value}"' for value in data.values()]
+
+        columns = ', '.join(columns_list)
+        properties = ', '.join(properties_list)
+
         sql = f"""
-                    INSERT INTO '{name_table}' ('{name_columns}')
-                    VALUES ('{properties}')
-        """
+                       INSERT INTO '{name_table}' ({columns})
+                       VALUES ({properties})
+           """
+        # print(sql)
 
         return sql
 
@@ -54,7 +70,7 @@ class Car:
     """__________________________________________SET методы__________________________________________________"""
 
     @DBI.connection
-    def set_user_car(self, *, cursor, message: dict, bot: object) -> str:
+    def set_user_car(self, *, cursor, message: dict, bot: object) -> None:
         message_text = message.text
         user_id = message.from_user.id
 
@@ -90,15 +106,18 @@ class Car:
             cursor.execute(
                 self.get_sql_to_write(
                     name_table=f'car_{name_properties}',
-                    name_columns=name_properties,
-                    properties=properties
+                    data={
+                        f"{name_properties}": f"{properties}"
+                    }
+                    # name_columns=name_properties,
+                    # properties=properties
                 )
             )
             row_id = cursor.lastrowid
             setattr(self, name_atr, row_id)
 
     @DBI.connection
-    def set_user_car_info(self, *, cursor, user_id: int) -> str:
+    def set_user_car_info(self, *, cursor, user_id: int) -> str:  # Поправить дублирование записей
         answer = None
 
         list_info = self.get_user_car_info(name_properties='user_car', user_id=user_id)
@@ -117,10 +136,18 @@ class Car:
         else:
             cursor.execute(
                 self.get_sql_to_write(
-                    name_table='user_car',
-                    name_columns='user_id, brand_id, model_id, model_range_id, body_id, generation_id',
-                    properties=f'{user_id}, {self.brand_id}, {self.model_id}, \
-                                {self.model_range_id}, {self.body_id}, {self.generation_id}'
+                    name_table="user_car",
+                    data={
+                        "user_id": f'{user_id}',
+                        "brand_id": f'{self.brand_id}',
+                        "model_id": f'{self.model_id}',
+                        "model_range_id": f'{self.model_range_id}',
+                        "body_id": f'{self.body_id}',
+                        "generation_id": f'{self.generation_id}'
+                    }
+                    # name_columns='user_id, brand_id, model_id, model_range_id, body_id, generation_id',
+                    # properties=f'{user_id}, {self.brand_id}, {self.model_id}, \
+                    #             {self.model_range_id}, {self.body_id}, {self.generation_id}'
                 )
             )
             answer = 'Авто зарегестрировано!'
