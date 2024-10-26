@@ -23,15 +23,6 @@ class Car:
 
         return sql_dict[name_properties]
 
-    # @staticmethod
-    # def get_sql_to_write(*, name_table: str, name_columns: str, properties: str) -> str:
-    #     sql = f"""
-    #                 INSERT INTO '{name_table}' ('{name_columns}')
-    #                 VALUES ('{properties}')
-    #     """
-    #
-    #     return sql
-
     @staticmethod
     def get_sql_to_write(*, name_table: str, data: dict) -> str:
         columns_list = [f'"{key}"' for key in data.keys()]
@@ -44,11 +35,8 @@ class Car:
                        INSERT INTO '{name_table}' ({columns})
                        VALUES ({properties})
            """
-        # print(sql)
 
         return sql
-
-
 
     #  Переписать все get и set методы в два. 1 - set, 1 - get с доп параметрами "имя таблицы"-"поля"-"значения".
     #  set_user_car - оставить.
@@ -63,8 +51,7 @@ class Car:
     @DBI.connection
     def get_user_car_info(self, *, cursor, user_id: int, name_properties: str) -> tuple:
         cursor.execute(self.get_sql_to_receive(name_properties=name_properties, user_id=user_id))
-        list_info = cursor.fetchone()
-        # list_info = dict(list_info)
+        list_info = cursor.fetchall()
         return list_info
 
     """__________________________________________SET методы__________________________________________________"""
@@ -98,19 +85,13 @@ class Car:
 
         if properties in list_info.values():  # Логику проверки вынести в отдельный метод
             setattr(self, name_atr, next(int(key) for key, value in list_info.items() if value == properties))
-            # print(f'{self.brand_id=}')
-            # print(type(self.brand_id))
         else:
-            print('в если set_car_info')
-            print(f'{name_properties=}')
             cursor.execute(
                 self.get_sql_to_write(
                     name_table=f'car_{name_properties}',
                     data={
                         f"{name_properties}": f"{properties}"
                     }
-                    # name_columns=name_properties,
-                    # properties=properties
                 )
             )
             row_id = cursor.lastrowid
@@ -130,8 +111,7 @@ class Car:
             self.generation_id
         )
 
-        if list_info[1:] == car_obj_dict:
-            # print("Зарегано")
+        if any(car_obj_dict == item[1:] for item in list_info):
             answer = 'Авто уже зарегестрировано!'
         else:
             cursor.execute(
@@ -145,9 +125,6 @@ class Car:
                         "body_id": f'{self.body_id}',
                         "generation_id": f'{self.generation_id}'
                     }
-                    # name_columns='user_id, brand_id, model_id, model_range_id, body_id, generation_id',
-                    # properties=f'{user_id}, {self.brand_id}, {self.model_id}, \
-                    #             {self.model_range_id}, {self.body_id}, {self.generation_id}'
                 )
             )
             answer = 'Авто зарегестрировано!'
