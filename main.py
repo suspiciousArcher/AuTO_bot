@@ -1,9 +1,12 @@
 import telebot
 from db_interaction.bot import Bot
 from db_interaction.car import Car
+from db_interaction.user import User
 
 bot = Bot(Bot.get_token())
 car = Car()
+user = User()
+
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -12,7 +15,7 @@ def start(message):
     username = message.from_user.username
     user_id = message.from_user.id
 
-    answer = bot.registration_user(
+    answer = user.registration_user(
         first_name=first_name,
         last_name=last_name,
         username=username,
@@ -31,7 +34,10 @@ def assist(message):
 def add_car(message):
     bot.send_message(message.chat.id, bot.MESSAGE_ADD_CAR)
 
-    bot.register_next_step_handler(message, lambda new_message: car.set_user_car(message=new_message, bot=bot))
+    bot.register_next_step_handler(message, lambda new_message: user.set_user_car(message=new_message,
+                                                                                  bot=bot,
+                                                                                  car=car)
+                                   )
 
 
 bot.polling(none_stop=True)

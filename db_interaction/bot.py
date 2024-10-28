@@ -1,4 +1,4 @@
-from db_interaction.db_interaction import DBInteraction as DBI
+from db_interaction.database import DataBase as DB
 from telebot import TeleBot, types
 
 
@@ -13,43 +13,24 @@ class Bot(TeleBot):
     '''
     MESSAGE_ADD_CAR = '''
     Для регистрации автомобиля отправте сообщением его Марку, Модель, Модельный ряд, Тип кузова и Поколение.\
-    \nВ качестве разделителя используйте запятую.
+    \nВ качестве разделителя используйте ",". \
+    \nЕсли вы не знаете/не хотите указывать один из параметров используйте символ "-".
     '''
     MESSAGE_GET_CAR = '''
     
     '''
 
     @staticmethod
-    @DBI.connection
+    @DB.connection
     def get_token(cursor) -> str:
-        cursor.execute("SELECT `token` FROM `token_API`")
+        cursor.execute(DB.get_sql_to_receive(name_properties='token'))
         result = cursor.fetchone()
         return result[0] if result else None
 
-    @staticmethod
-    @DBI.connection
-    def registration_user(cursor, first_name: str, last_name: str, username: str, user_id: int) -> str:
-        try:
-            cursor.execute(f"SELECT `user_id` FROM `users` WHERE user_id = {user_id}")
-            result = cursor.fetchone()
 
-            if result is not None:
-                answer = 'С возвращением 🤝'
-            else:
-                answer = 'Добро пожаловать в клуб 🎉'
-                cursor.execute(
-                    f"INSERT INTO `users` (`first_name`, `last_name`, `username`, `user_id`) \
-                        VALUES ('{first_name}', '{last_name}', '{username}', {user_id})")
-
-            return answer
-
-        except:
-            answer = 'Не предвиденная ошибка 🤷 \nПопробуйте позже 🫠 '
-            return answer
-
-    def registration_car(self, message: dict) -> None:
-        text = message.text
-        print(text)
+    # def registration_car(self, message: dict) -> None:
+    #     text = message.text
+    #     print(text)
 
     # @staticmethod
     # def create_reply_markup(options_ist: dict, items_in_row: int = 3):
