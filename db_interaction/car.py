@@ -1,5 +1,4 @@
 from db_interaction.db_interaction import DBInteraction as DBI
-from db_interaction.bot import Bot
 
 
 class Car:
@@ -8,6 +7,8 @@ class Car:
     model_range_id = None
     body_id = None
     generation_id = None
+
+    user_car_id = None
 
     @staticmethod
     def get_sql_to_receive(*, name_properties: str, user_id: int) -> str:
@@ -98,7 +99,7 @@ class Car:
             setattr(self, name_atr, row_id)
 
     @DBI.connection
-    def set_user_car_info(self, *, cursor, user_id: int) -> str:  # Поправить дублирование записей
+    def set_user_car_info(self, *, cursor, user_id: int) -> str:  # Перенести в User
         answer = None
 
         list_info = self.get_user_car_info(name_properties='user_car', user_id=user_id)
